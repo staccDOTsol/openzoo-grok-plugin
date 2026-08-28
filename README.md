@@ -19,6 +19,10 @@ sponsored, so there is nothing to set up first.
 | `openzoo-memory` skill | Durable facts that survive between sessions. **Free.** |
 | `openzoo` MCP server | `https://mcp.openzoo.fun/mcp` — `zoo_models`, `zoo_quote`, `zoo_payment_tokens`, `zoo_wallet`, `zoo_bind`, `zoo_ask`. |
 | `SessionStart` hook | Injects a short brief so binding is the default reflex, not something the model has to remember. Offline, no network, no shell, ~80ms. |
+| `/openzoo:bind` command | Bind a path or the conversation, then **verify `chars`** before reporting success. |
+| `/openzoo:ask` command | Ask against a bind, reporting `context_id` and `tokensRead` as provenance. |
+| `/openzoo:cost` command | Price a call before running it, or total what this session actually spent. |
+| `corpus-analyst` agent | Interrogates a bound corpus in many cheap passes, never reading it into context. |
 
 ## What works with nothing configured
 
