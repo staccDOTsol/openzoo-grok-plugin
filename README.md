@@ -85,11 +85,22 @@ Three hooks give the agent memory without it having to ask:
   stops re-reading files it has already seen. Bounded to 4s and **fails open**:
   if the daemon is slow or absent, the prompt runs with no injected context.
 
-**The default destination is `http://127.0.0.1:8787` — a leCore daemon on your
-own machine. Nothing your agent reads leaves your computer.** That is not a
-setting we recommend, it is the default, because a plugin that silently uploads
-a stranger's repo to a service they have not heard of deserves to be
-uninstalled.
+**The daemon ships with the plugin.** `lecore/` is the holographic-memory
+service, vendored as source and pinned by the same commit SHA the marketplace
+pins. The plugin starts it at session start, restarts it if it dies, and backs
+off if it cannot. **Nothing is downloaded or installed at runtime** — vendored
+source is reviewable in the diff; a `pip install` from a hook would not be, and
+that is a distinction worth keeping.
+
+It needs Python 3 and `numpy`, and that is the entire dependency list — verified
+by running it with `torch`, `leCore` and `sentence_transformers` all absent.
+Those enable an optional semantic lane; without them retrieval is lexical and
+still works. No Python means no ambient memory, and the tools still work.
+
+**The default destination is `http://127.0.0.1:8787` — that vendored daemon, on
+your own machine. Nothing your agent reads leaves your computer.** Not a setting
+we recommend, the default, because a plugin that silently uploads a stranger's
+repo to a service they have not heard of deserves to be uninstalled.
 
 Egress is a single explicit opt-in: set `OPENZOO_ENDPOINT` to the hosted
 gateway. The injected context always states which mode it is in, so nobody has

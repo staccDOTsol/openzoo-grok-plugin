@@ -23,7 +23,8 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { env, isLocal } from './openzoo-env.mjs';
 
 // A probe on every hook would add a round trip to every prompt and every tool
@@ -61,11 +62,38 @@ async function alive(timeoutMs = 1500) {
   } catch { return false; }
 }
 
+/** The daemon is VENDORED at <plugin>/lecore — source, not a download. */
+function vendoredServer() {
+  return join(dirname(fileURLToPath(import.meta.url)), '..', 'lecore', 'server.py');
+}
+
 function launchCommand() {
+  // 1. Explicit override always wins.
   if (process.env.OPENZOO_LECORE_CMD) {
     const parts = process.env.OPENZOO_LECORE_CMD.split(' ').filter(Boolean);
     return { cmd: parts[0], args: parts.slice(1) };
   }
+  // 2. THE VENDORED COPY — the default, and the reason this plugin is one
+  //    command. The daemon ships as source in this repo, pinned by the same SHA
+  //    the marketplace pins, so nothing is fetched or installed at runtime.
+  //    That distinction is the whole point: shipping reviewable source is not
+  //    the same as `pip install` from a hook, which is the thing a security
+  //    review is right to reject.
+  //
+  //    It needs Python 3 and numpy and nothing else — VERIFIED by running it
+  //    under a plain interpreter with torch, leCore and sentence_transformers
+  //    all absent. Those enable the optional semantic lane; without them
+  //    retrieval is lexical and still works.
+  const vendored = vendoredServer();
+  if (existsSync(vendored)) {
+    for (const py of [process.env.OPENZOO_PYTHON, 'python3', 'python'].filter(Boolean)) {
+      const ok = spawnSync(py, ['-c', 'import numpy'], { stdio: 'ignore' });
+      if (ok.status === 0) return { cmd: py, args: [vendored] };
+    }
+    // Python or numpy missing: fail open. Do not try to install anything.
+    return null;
+  }
+  // 3. A system install, for anyone who already runs one.
   const onPath = spawnSync('command', ['-v', 'lecore'], { shell: true, encoding: 'utf8' });
   if (onPath.status === 0 && onPath.stdout.trim()) return { cmd: 'lecore', args: ['serve'] };
   const home = process.env.OPENZOO_LECORE_HOME;
@@ -101,7 +129,20 @@ export async function ensureDaemon() {
   if (!launch) return false;
 
   try {
-    const child = spawn(launch.cmd, launch.args, { detached: true, stdio: 'ignore' });
+    const port = new URL(env.endpoint).port || '8787';
+    const child = spawn(launch.cmd, launch.args, {
+      detached: true,
+      stdio: 'ignore',
+      env: {
+        ...process.env,
+        HRR_PORT: port,
+        HRR_SERVICE_TOKEN: env.token,
+        // The vendored server defaults its store to /workspace/hrr-context/data,
+        // which exists on the machine it was written for and nowhere else.
+        HRR_DATA_DIR: process.env.HRR_DATA_DIR
+          || join(process.env.HOME || tmpdir(), '.openzoo', 'lecore-memory'),
+      },
+    });
     await new Promise((r) => {
       child.once('spawn', r); child.once('error', r); setTimeout(r, 1000).unref();
     });
