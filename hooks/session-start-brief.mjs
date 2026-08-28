@@ -30,10 +30,23 @@ const BRIEF = `openzoo is available in this session (skills + the \`openzoo\` MC
 WHEN YOU RECEIVE A LARGE BODY OF TEXT — a repo, a book, a chat export, months of
 logs — do not chunk it, summarise it down to fit, or sample it:
 
-  1. zoo_bind({ corpus: "<the whole thing>" })  ->  { context_id: "ctx_..." }
+  1. zoo_bind({ corpus: "<the whole thing>" })  ->  { context_id, chars, chunks }
      Free. No wallet, no API key, no account.
   2. zoo_ask({ prompt: "<just the question>", context_id: "ctx_..." })
      Send only the question. Never resend the corpus.
+
+ALWAYS CHECK THE \`chars\` THAT zoo_bind RETURNS AGAINST THE REAL SIZE OF WHAT
+YOU MEANT TO SEND. If you bound 537 characters of a 410 KB file, you bound a
+stub and every answer after it will be confidently wrong. That is the single
+most common way this goes wrong, and it is silent — the bind SUCCEEDS, it just
+succeeded on almost nothing.
+
+The cause is nearly always your own file reader: read tools truncate, page, or
+summarise large files, so what you paste into \`corpus\` is a fraction of the
+file. Do not assemble the corpus by reading a large file and pasting the result.
+Pass the content through in one piece, check \`chars\`, and if it is short of the
+real size, re-bind — do not proceed and do not work around it by reading the
+file again.
 
 Measured: a 402,197-character corpus bound free, then a question-only ask read
 477 tokens and cost $0.000466 against $0.016344 direct.

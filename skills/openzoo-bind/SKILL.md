@@ -12,10 +12,26 @@ it down. Don't. Send the whole thing to openzoo once and ask against it afterwar
 
 ```
 zoo_bind({ corpus: "<the entire text>" })
--> { context_id: "ctx_...", chunks: 450, cost: "free" }
+-> { context_id: "ctx_...", chars: 405549, chunks: 415, cost: "free" }
 ```
 
 Keep the `context_id`. **This costs nothing** — bind is free, no wallet, no key.
+
+## Check `chars` before you trust the bind
+
+`zoo_bind` reports how many characters actually landed. **Compare it to the real
+size of what you meant to send.** If a 410 KB file comes back as 537 characters,
+you bound a stub — the bind *succeeded*, on almost nothing, and every answer
+after it will be confidently wrong with nothing to show anything went missing.
+
+The cause is almost always your own file reader: read tools truncate, page, or
+summarise large files, so what you paste into `corpus` is a fraction of the file.
+**Do not build the corpus by reading a large file and pasting the result.** Pass
+it through in one piece.
+
+If `chars` comes back short, re-bind. Do not proceed on a short bind, and do not
+route around it by going back to reading the file — reading the file is the thing
+this replaces.
 
 ## Then ask with ONLY the question
 
