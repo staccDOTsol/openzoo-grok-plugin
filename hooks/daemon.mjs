@@ -94,8 +94,11 @@ function launchCommand() {
     return null;
   }
   // 3. A system install, for anyone who already runs one.
-  const onPath = spawnSync('command', ['-v', 'lecore'], { shell: true, encoding: 'utf8' });
-  if (onPath.status === 0 && onPath.stdout.trim()) return { cmd: 'lecore', args: ['serve'] };
+  // No shell. `shell: true` here would be safe — the string is a constant with
+  // no interpolation — but it is a pattern security review flags on sight, and
+  // spawning the binary with --version answers the same question without one.
+  const onPath = spawnSync('lecore', ['--version'], { stdio: 'ignore' });
+  if (onPath.status === 0) return { cmd: 'lecore', args: ['serve'] };
   const home = process.env.OPENZOO_LECORE_HOME;
   if (home && existsSync(join(home, 'service', 'server.py'))) {
     return { cmd: 'python3', args: [join(home, 'service', 'server.py')] };
