@@ -19,6 +19,8 @@ sponsored, so there is nothing to set up first.
 | `openzoo-memory` skill | Durable facts that survive between sessions. **Free.** |
 | `openzoo` MCP server | `https://mcp.openzoo.fun/mcp` — `zoo_models`, `zoo_quote`, `zoo_payment_tokens`, `zoo_wallet`, `zoo_bind`, `zoo_ask`. |
 | `SessionStart` hook | Injects a short brief so binding is the default reflex, not something the model has to remember. Offline, no network, no shell, ~80ms. |
+| `PostToolUse` hook | Binds what the agent just read into holographic memory, in a detached background process. Returns in ~0.1s; never waits for the bind. |
+| `UserPromptSubmit` hook | Retrieves the relevant slice of everything read so far and injects it, so the agent stops re-reading files it has already seen. |
 | `/openzoo:bind` command | Bind a path or the conversation, then **verify `chars`** before reporting success. |
 | `/openzoo:ask` command | Ask against a bind, reporting `context_id` and `tokensRead` as provenance. |
 | `/openzoo:cost` command | Price a call before running it, or total what this session actually spent. |
@@ -72,13 +74,30 @@ Declared in full, per the marketplace security guidance:
 account, and no token to configure. It does not read environment variables,
 `.env`, `~/.ssh`, or any file on your machine.
 
-It ships **one hook**: a `SessionStart` brief (`hooks/session-start-brief.mjs`)
-that prints a fixed string telling the agent to bind large bodies rather than
-chunk them or read them off disk. It makes no network call, spawns no shell,
-reads no file, and takes about 80ms. The entire payload is a string literal in
-that file — read it, it is short. It exists because a bot with these skills
-installed still answered from a grep of the original file instead of from
-retrieval, and nothing in the transcript said so. Payment, where it happens, is x402: settled on chain per request, either
+### Ambient memory is LOCAL BY DEFAULT
+
+Three hooks give the agent memory without it having to ask:
+
+- `SessionStart` — prints a fixed brief. No network, no shell, no file reads.
+- `PostToolUse` — binds what was just read, in a **detached background process**.
+  Returns in ~0.1s and never waits for the bind.
+- `UserPromptSubmit` — retrieves the relevant slice and injects it, so the agent
+  stops re-reading files it has already seen. Bounded to 4s and **fails open**:
+  if the daemon is slow or absent, the prompt runs with no injected context.
+
+**The default destination is `http://127.0.0.1:8787` — a leCore daemon on your
+own machine. Nothing your agent reads leaves your computer.** That is not a
+setting we recommend, it is the default, because a plugin that silently uploads
+a stranger's repo to a service they have not heard of deserves to be
+uninstalled.
+
+Egress is a single explicit opt-in: set `OPENZOO_ENDPOINT` to the hosted
+gateway. The injected context always states which mode it is in, so nobody has
+to guess. `OPENZOO_AMBIENT=0` turns the automatic behaviour off entirely and
+leaves the tools.
+
+Inference is the one thing that always leaves your machine, and only when a
+model is actually asked something — never as a side effect of opening a file. Payment, where it happens, is x402: settled on chain per request, either
 from our sponsored house wallet or from a wallet you fund yourself.
 
 The `openzoo-memory` skill writes to a service outside your machine, so it is
