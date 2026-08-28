@@ -19,8 +19,15 @@
  * prompt text is sent to whatever that endpoint is, which is precisely why the
  * default is loopback.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { env, routes, headers, isLocal } from './openzoo-env.mjs';
+import { ensureDaemon } from './daemon.mjs';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -48,6 +55,38 @@ async function main() {
   try { ev = JSON.parse(await readStdin() || '{}'); } catch { return emit(null); }
   const prompt = (ev.prompt || ev.user_prompt || '').trim();
   if (prompt.length < 8) return emit(null);
+
+  // BIND A BIG PROMPT TOO, not just tool results.
+  //
+  // PostToolUse only fires on tool calls, and the most common way a large body
+  // arrives is not a tool call at all — it is an ATTACHMENT, which reaches the
+  // agent inside the prompt. OBSERVED: a 120KB markdown file dropped into a
+  // Grok Bot chat produced no PostToolUse event and therefore no ambient bind
+  // at all, which quietly defeats the entire feature for the single most
+  // obvious use case.
+  //
+  // Detached and never awaited, same as the tool path: the prompt must not wait
+  // on a bind. It will not be recallable until the NEXT prompt, which is the
+  // correct trade — the model already has this text in front of it right now.
+  if (prompt.length >= env.minBindChars) {
+    try {
+      const dir = mkdtempSync(join(tmpdir(), 'openzoo-bind-'));
+      const file = join(dir, 'payload.txt');
+      writeFileSync(file, `### user message\n\n${prompt}`, { mode: 0o600 });
+      const child = spawn(process.execPath, [join(HERE, 'bind-worker.mjs'), file], {
+        detached: true, stdio: 'ignore',
+      });
+      await new Promise((r) => {
+        child.once('spawn', r); child.once('error', r); setTimeout(r, 1000).unref();
+      });
+      child.unref();
+    } catch {}
+  }
+
+  // Self-heal before retrieving. If the daemon died between prompts this brings
+  // it back; if it cannot be started we return no context rather than blocking,
+  // and rather than quietly reaching for the hosted service.
+  if (!(await ensureDaemon())) return emit(null);
 
   let contextId = null;
   try {

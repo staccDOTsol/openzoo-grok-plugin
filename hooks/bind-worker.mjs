@@ -19,6 +19,7 @@
  */
 import { readFileSync, unlinkSync, writeFileSync, existsSync } from 'node:fs';
 import { env, routes, headers } from './openzoo-env.mjs';
+import { ensureDaemon } from './daemon.mjs';
 
 const payloadPath = process.argv[2];
 if (!payloadPath) process.exit(0);
@@ -30,6 +31,10 @@ async function main() {
   } catch { process.exit(0); }
   try { unlinkSync(payloadPath); } catch {}
   if (!text || text.length < env.minBindChars) process.exit(0);
+
+  // Start the daemon if it is not up. This runs detached, so a few seconds
+  // spent here costs the agent nothing.
+  if (!(await ensureDaemon())) process.exit(0);
 
   // Reuse one cumulative context so everything this bot has seen ranks
   // together. Without it each read becomes an island and recall can only ever

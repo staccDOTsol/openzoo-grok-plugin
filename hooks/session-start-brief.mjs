@@ -79,6 +79,30 @@ short call with nothing bound it will say there is no saving to claim. That is
 correct, not a bug — the saving comes from binding, so the answer is to bind,
 not to switch models.`;
 
+// LAUNCH THE DAEMON ON INIT, in the background.
+//
+// Waiting for ambient memory to be needed before starting the thing that holds
+// it means the first read of a session always misses. Kicking it off here gives
+// it the whole session-start window to come up, and because this is spawned
+// detached and never awaited, the brief below is still emitted immediately.
+//
+// A local spawn, not a network call: this starts a daemon on loopback and sends
+// nothing anywhere. If there is no way to launch one, nothing happens and the
+// session proceeds without ambient memory.
+try {
+  const { spawn } = await import('node:child_process');
+  const { dirname, join } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const child = spawn(process.execPath, ['-e',
+    `import(${JSON.stringify(join(here, 'daemon.mjs'))}).then(m => m.ensureDaemon()).catch(() => {})`,
+  ], { detached: true, stdio: 'ignore' });
+  await new Promise((r) => {
+    child.once('spawn', r); child.once('error', r); setTimeout(r, 800).unref();
+  });
+  child.unref();
+} catch {}
+
 try {
   // The documented SessionStart contract: additionalContext is injected into
   // the session. `continue: true` so a session never hangs on this hook.
