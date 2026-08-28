@@ -1,46 +1,33 @@
 # openzoo — Grok Build plugin
 
-## Long chats get billed like long chats, every turn
+Gives a Grok Build agent two things it does not otherwise have: **memory that
+survives the session**, and **models outside the Grok family** when a task calls
+for one.
 
-That is the complaint, and it is not "Grok Bot is bad" — it is that the whole
-history is resent on every turn, so cost climbs with conversation length. One
-user measured 1.83B tokens in a week with **context at 88% of it**. Another hit
-a weekly Ultra limit in a single day. The common workaround is to abandon the
-thread and start a fresh bot.
+## Memory, so the agent stops re-reading
 
-**openzoo flattens that curve.** Point a client at the local proxy and older
-turns are spilled into holographic memory before the model sees them — same
-model, same answer, a fraction of the input.
+Hand it a repo, a book, a chat export, months of logs. It binds the whole thing
+once into holographic memory and answers by retrieval, instead of carrying the
+text in context and re-reading it every turn.
 
-| conversation | sent | tokens the model billed |
-|---|---|---|
-| 4 turns | 22,576 B | 846 |
-| 20 turns | 112,494 B | 5,287 |
-| 60 turns | 336,963 B | **6,421** |
+Measured on the live service: a **402,197-character** corpus bound free, then a
+question-only ask read **491 tokens** and cost **$0.000731** against **$0.011648**
+sending the same call to the provider direct.
 
-The ratio is not the point — **the flattening is**. From 20 to 60 turns the
-transcript tripled and billed context rose **21%**. Turn 60 costs about what turn
-20 costs. Sent naively, that 60-turn history is ~84,000 tokens.
+Binding is free. There is no account and no API key — model calls are paid per
+request over x402, settled on chain, and the demo tier is sponsored so a fresh
+install answers on the first try.
 
-### Read this before you get your hopes up
+**By default nothing leaves your machine.** The plugin ships its own local
+memory daemon (`lecore/`, vendored as source) and talks to `127.0.0.1:8787`.
+Sending anything to the hosted service is one explicit environment variable.
 
-**This does not work inside the Grok Bot desktop or mobile app.** That app runs
-its agent in a remote pod, so its model calls never cross your machine and no
-local proxy can reach them. There is no `base_url` to change and no hook that
-executes. If someone tells you otherwise, they have not tested it.
+## Models the Grok family does not cover
 
-It works in any client that exposes a `base_url`: the **grok CLI**, Claude Code,
-Cline, Cursor, aider, or a plain OpenAI-compatible SDK. If your long sessions are
-blowing a weekly cap, this is the argument for moving them off the app rather
-than for installing something into it. Run `/openzoo:proxy` for the four lines of
-config.
-
-### What the app DOES get from this plugin
-
-The tools and the discipline, not the automatic saving: bind a large corpus once
-with `zoo_bind` and ask against it by `context_id` instead of carrying it in
-every turn, plus pay-per-call access to 1,100+ models with no account and no API
-key. Useful, and honestly smaller than the proxy.
+`zoo_ask` reaches 1,100+ text models plus image and video generation through one
+endpoint — useful when a job wants a specific non-Grok model, or a cheap model
+for a bulk pass. It is an addition alongside your Grok models, not a replacement
+for them and not a route around them.
 
 ## What it adds
 
@@ -53,7 +40,6 @@ key. Useful, and honestly smaller than the proxy.
 | `SessionStart` hook | Injects a short brief so binding is the default reflex, not something the model has to remember. Offline, no network, no shell, ~80ms. |
 | `PostToolUse` hook | Binds what the agent just read into holographic memory, in a detached background process. Returns in ~0.1s; never waits for the bind. |
 | `UserPromptSubmit` hook | Retrieves the relevant slice of everything read so far and injects it, so the agent stops re-reading files it has already seen. |
-| `/openzoo:proxy` command | **Point a model at the proxy so the conversation stops growing.** The main event. |
 | `/openzoo:bind` command | Bind a path or the conversation, then **verify `chars`** before reporting success. |
 | `/openzoo:ask` command | Ask against a bind, reporting `context_id` and `tokensRead` as provenance. |
 | `/openzoo:cost` command | Price a call before running it, or total what this session actually spent. |
@@ -147,16 +133,6 @@ from our sponsored house wallet or from a wallet you fund yourself.
 The `openzoo-memory` skill writes to a service outside your machine, so it is
 explicitly scoped to durable preferences and decisions, and instructs against
 storing credentials or unshared personal data.
-
-## Why it is cheaper
-
-Large inputs are bound to holographic memory once and answered by retrieval, so
-you stop paying to re-send the same context on every turn. Price is cost plus a
-share of the measured saving, never above what the same call costs direct.
-
-Every settlement is on chain and carries a leaf binding the payment to the work
-it bought, so the numbers are checkable on a block explorer rather than in a
-dashboard: [openzoo.fun/stats](https://openzoo.fun/stats).
 
 ## Links
 

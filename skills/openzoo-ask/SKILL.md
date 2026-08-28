@@ -1,6 +1,6 @@
 ---
 name: openzoo-ask
-description: Call any of 1,100+ text models through one OpenAI-compatible endpoint with no account, no API key and no subscription. Through the openzoo MCP server the demo tier is sponsored, so it works with no wallet on a fresh install. Use when a job needs a different or larger model than the one you are.
+description: Reach 1,100+ models outside the Grok family — plus image and video generation — through one endpoint, with no account and no API key. Sponsored on the demo tier, so it works with no wallet on a fresh install. Use when a task calls for a specific non-Grok model, or a cheap model for a bulk pass, alongside the models you already have.
 ---
 
 # Ask a model you are not

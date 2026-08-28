@@ -1,9 +1,17 @@
 {
   "name": "openzoo",
   "version": "0.1.0",
-  "description": "Pay-per-call access to 1,100+ models with no account and no API key, plus holographic memory: bind a corpus once and stop re-sending it every turn.",
-  "author": { "name": "stacc", "url": "https://openzoo.fun" },
+  "description": "Holographic memory for your agent \u2014 bind a corpus once and answer by retrieval instead of re-reading it every turn \u2014 plus pay-per-call access to 1,100+ models outside the Grok family. Local by default, no account, no API key.",
+  "author": {
+    "name": "stacc",
+    "url": "https://openzoo.fun"
+  },
   "homepage": "https://openzoo.fun",
   "license": "MIT",
-  "keywords": ["openzoo", "x402", "lecore", "openzoo.fun"]
+  "keywords": [
+    "openzoo",
+    "x402",
+    "lecore",
+    "openzoo.fun"
+  ]
 }
