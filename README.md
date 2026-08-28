@@ -1,12 +1,16 @@
 # openzoo — Grok Build plugin
 
-**Your context stops growing.** Every turn of a chat resends the whole
-conversation, so a long session gets expensive for no extra work. Point your
-model at the openzoo proxy and the older turns are spilled into holographic
-memory before the model ever sees them — same model, same answer, a fraction of
-the input.
+## Long chats get billed like long chats, every turn
 
-Measured on a real growing conversation:
+That is the complaint, and it is not "Grok Bot is bad" — it is that the whole
+history is resent on every turn, so cost climbs with conversation length. One
+user measured 1.83B tokens in a week with **context at 88% of it**. Another hit
+a weekly Ultra limit in a single day. The common workaround is to abandon the
+thread and start a fresh bot.
+
+**openzoo flattens that curve.** Point a client at the local proxy and older
+turns are spilled into holographic memory before the model sees them — same
+model, same answer, a fraction of the input.
 
 | conversation | sent | tokens the model billed |
 |---|---|---|
@@ -14,21 +18,29 @@ Measured on a real growing conversation:
 | 20 turns | 112,494 B | 5,287 |
 | 60 turns | 336,963 B | **6,421** |
 
-The ratio is not the point — **the curve flattening is**. From 20 to 60 turns the
+The ratio is not the point — **the flattening is**. From 20 to 60 turns the
 transcript tripled and billed context rose **21%**. Turn 60 costs about what turn
-20 costs.
+20 costs. Sent naively, that 60-turn history is ~84,000 tokens.
 
-Run `/openzoo:proxy` for the setup. It is four lines of config and no change to
-how you work: no corpus to upload, no command to remember, nothing to think
-about per turn.
+### Read this before you get your hopes up
 
-> Not available inside the Grok Bot desktop/mobile app — that app runs its agent
-> in a remote pod, so no local proxy can sit in front of its model calls. It
-> needs a client that exposes a `base_url` (grok CLI, Claude Code, Cline, Cursor,
-> aider, any OpenAI-compatible SDK). Everything else below works everywhere.
+**This does not work inside the Grok Bot desktop or mobile app.** That app runs
+its agent in a remote pod, so its model calls never cross your machine and no
+local proxy can reach them. There is no `base_url` to change and no hook that
+executes. If someone tells you otherwise, they have not tested it.
 
-Also here: pay-per-call access to 1,100+ models with no account and no API key,
-and an explicit bind/ask path for when you *do* hand over a large corpus.
+It works in any client that exposes a `base_url`: the **grok CLI**, Claude Code,
+Cline, Cursor, aider, or a plain OpenAI-compatible SDK. If your long sessions are
+blowing a weekly cap, this is the argument for moving them off the app rather
+than for installing something into it. Run `/openzoo:proxy` for the four lines of
+config.
+
+### What the app DOES get from this plugin
+
+The tools and the discipline, not the automatic saving: bind a large corpus once
+with `zoo_bind` and ask against it by `context_id` instead of carrying it in
+every turn, plus pay-per-call access to 1,100+ models with no account and no API
+key. Useful, and honestly smaller than the proxy.
 
 ## What it adds
 
