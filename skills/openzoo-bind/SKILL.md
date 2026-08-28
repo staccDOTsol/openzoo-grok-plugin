@@ -29,9 +29,38 @@ summarise large files, so what you paste into `corpus` is a fraction of the file
 **Do not build the corpus by reading a large file and pasting the result.** Pass
 it through in one piece.
 
-If `chars` comes back short, re-bind. Do not proceed on a short bind, and do not
-route around it by going back to reading the file — reading the file is the thing
-this replaces.
+## Too big for your reader? Bind it in parts
+
+Your reader capping out is not a reason to give up on the bind. Parts **append**
+into one corpus:
+
+```
+zoo_bind({ corpus: part1, total_chars: 284791, chars_sent_so_far: 94899 })
+  -> { context_id: "ctx_...", complete: false }
+
+zoo_bind({ corpus: part2, context_id: "ctx_...",
+           total_chars: 284791, chars_sent_so_far: 189886 })
+  -> { complete: false }
+
+zoo_bind({ corpus: part3, context_id: "ctx_...",
+           total_chars: 284791, chars_sent_so_far: 284791 })
+  -> { complete: true }
+```
+
+Pass `total_chars` (the real size of the source) and `chars_sent_so_far` (the
+running total including this call) and the tool tells you outright whether the
+bind is done — `complete: true`, or a `WARNING` naming exactly how much is
+missing. **You** track `chars_sent_so_far`: this server runs several machines,
+so it cannot.
+
+Do not ask against a bind that is not `complete`. Measured on a 284,791-char
+source sent in three ~95k parts: all three landed in one context, and a
+question-only ask against it read 491 tokens and cost $0.000731 against
+$0.011648 direct — 94% less.
+
+If `chars` comes back short, send the rest with `context_id` — do not start
+over, and do not route around it by going back to reading the file. Reading the
+file is the thing this replaces.
 
 ## Then ask with ONLY the question
 

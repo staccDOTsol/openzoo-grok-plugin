@@ -43,10 +43,18 @@ succeeded on almost nothing.
 
 The cause is nearly always your own file reader: read tools truncate, page, or
 summarise large files, so what you paste into \`corpus\` is a fraction of the
-file. Do not assemble the corpus by reading a large file and pasting the result.
-Pass the content through in one piece, check \`chars\`, and if it is short of the
-real size, re-bind — do not proceed and do not work around it by reading the
-file again.
+file.
+
+IF IT WILL NOT FIT IN ONE CALL, BIND IT IN PARTS — they append into one corpus:
+
+  zoo_bind({ corpus: part2, context_id: "ctx_...",
+             total_chars: <real size>, chars_sent_so_far: <running total> })
+
+Pass total_chars and chars_sent_so_far and the tool tells you outright whether
+the bind is done (\`complete: true\`) or names exactly how much is still missing.
+YOU track chars_sent_so_far; this server runs several machines and cannot. Do
+not ask against a bind that is not complete, and never fall back to reading the
+file to answer.
 
 Measured: a 402,197-character corpus bound free, then a question-only ask read
 477 tokens and cost $0.000466 against $0.016344 direct.
