@@ -1,6 +1,6 @@
 # openzoo — Grok Build plugin
 
-Pay-per-call access to 400+ models with **no account and no API key**, plus
+Pay-per-call access to 1,100+ models with **no account and no API key**, plus
 holographic memory: bind a corpus once and stop re-sending it every turn.
 
 ```
@@ -15,7 +15,7 @@ sponsored, so there is nothing to set up first.
 | Component | What it does |
 |---|---|
 | `openzoo-bind` skill | Send a repo/book/log dump to openzoo once, then answer from it by retrieval. **Free.** |
-| `openzoo-ask` skill | Call any of 400+ models through one OpenAI-compatible endpoint. Paid per request. |
+| `openzoo-ask` skill | Call any of 1,100+ text models through one OpenAI-compatible endpoint. Sponsored on the demo tier. |
 | `openzoo-memory` skill | Durable facts that survive between sessions. **Free.** |
 | `openzoo` MCP server | `https://mcp.openzoo.fun/mcp` — `zoo_models`, `zoo_quote`, `zoo_payment_tokens`, `zoo_wallet`, `zoo_ask`. |
 

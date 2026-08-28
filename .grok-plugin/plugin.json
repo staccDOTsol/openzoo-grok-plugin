@@ -1,7 +1,7 @@
 {
   "name": "openzoo",
   "version": "0.1.0",
-  "description": "Pay-per-call access to 400+ models with no account and no API key, plus holographic memory: bind a corpus once and stop re-sending it every turn.",
+  "description": "Pay-per-call access to 1,100+ models with no account and no API key, plus holographic memory: bind a corpus once and stop re-sending it every turn.",
   "author": { "name": "stacc", "url": "https://openzoo.fun" },
   "homepage": "https://openzoo.fun",
   "license": "MIT",

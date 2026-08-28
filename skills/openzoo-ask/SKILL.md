@@ -1,12 +1,12 @@
 ---
 name: openzoo-ask
-description: Call any of 400+ models through one OpenAI-compatible endpoint with no account, no API key and no subscription. Through the openzoo MCP server the demo tier is sponsored, so it works with no wallet on a fresh install. Use when a job needs a different or larger model than the one you are.
+description: Call any of 1,100+ text models through one OpenAI-compatible endpoint with no account, no API key and no subscription. Through the openzoo MCP server the demo tier is sponsored, so it works with no wallet on a fresh install. Use when a job needs a different or larger model than the one you are.
 ---
 
 # Ask a model you are not
 
 openzoo is a paid router in front of other people's models. One
-OpenAI-compatible endpoint, 400+ models, no key to hold.
+OpenAI-compatible endpoint, 1,100+ text models, no key to hold.
 
 ```
 POST https://x402-tokens.fly.dev/v1/chat/completions
