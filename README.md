@@ -18,6 +18,7 @@ sponsored, so there is nothing to set up first.
 | `openzoo-ask` skill | Call any of 1,100+ text models through one OpenAI-compatible endpoint. Sponsored on the demo tier. |
 | `openzoo-memory` skill | Durable facts that survive between sessions. **Free.** |
 | `openzoo` MCP server | `https://mcp.openzoo.fun/mcp` — `zoo_models`, `zoo_quote`, `zoo_payment_tokens`, `zoo_wallet`, `zoo_bind`, `zoo_ask`. |
+| `SessionStart` hook | Injects a short brief so binding is the default reflex, not something the model has to remember. Offline, no network, no shell, ~80ms. |
 
 ## What works with nothing configured
 
@@ -65,9 +66,15 @@ Declared in full, per the marketplace security guidance:
 
 **This plugin needs no credentials and reads none.** There is no API key, no
 account, and no token to configure. It does not read environment variables,
-`.env`, `~/.ssh`, or any file on your machine, and it installs no hooks and runs
-no scripts — it contributes three skills and one remote HTTP MCP server, nothing
-else. Payment, where it happens, is x402: settled on chain per request, either
+`.env`, `~/.ssh`, or any file on your machine.
+
+It ships **one hook**: a `SessionStart` brief (`hooks/session-start-brief.mjs`)
+that prints a fixed string telling the agent to bind large bodies rather than
+chunk them or read them off disk. It makes no network call, spawns no shell,
+reads no file, and takes about 80ms. The entire payload is a string literal in
+that file — read it, it is short. It exists because a bot with these skills
+installed still answered from a grep of the original file instead of from
+retrieval, and nothing in the transcript said so. Payment, where it happens, is x402: settled on chain per request, either
 from our sponsored house wallet or from a wallet you fund yourself.
 
 The `openzoo-memory` skill writes to a service outside your machine, so it is
