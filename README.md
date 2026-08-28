@@ -14,10 +14,10 @@ sponsored, so there is nothing to set up first.
 
 | Component | What it does |
 |---|---|
-| `openzoo-bind` skill | Send a repo/book/log dump to openzoo once, then answer from it by retrieval. **Free.** |
+| `openzoo-bind` skill | Bind a repo/book/log dump once with `zoo_bind`, then answer from it by retrieval. **Free.** |
 | `openzoo-ask` skill | Call any of 1,100+ text models through one OpenAI-compatible endpoint. Sponsored on the demo tier. |
 | `openzoo-memory` skill | Durable facts that survive between sessions. **Free.** |
-| `openzoo` MCP server | `https://mcp.openzoo.fun/mcp` — `zoo_models`, `zoo_quote`, `zoo_payment_tokens`, `zoo_wallet`, `zoo_ask`. |
+| `openzoo` MCP server | `https://mcp.openzoo.fun/mcp` — `zoo_models`, `zoo_quote`, `zoo_payment_tokens`, `zoo_wallet`, `zoo_bind`, `zoo_ask`. |
 
 ## What works with nothing configured
 
@@ -39,6 +39,10 @@ script exhausting it would break the demo for everyone else.
 Every reply carries a `cost` block: what the call cost, and what the same call
 would have cost sent direct.
 
+Measured end to end on the live server: a 402,197-character corpus bound free
+into 450 chunks, then a question-only ask against its `context_id` read **477
+tokens** and cost **$0.000466 against $0.016344 direct — 97% less**.
+
 ### Past the demo tier
 
 Pass a `wallet_id` from `zoo_wallet` and calls settle from **your** wallet — no
@@ -55,7 +59,7 @@ Declared in full, per the marketplace security guidance:
 |---|---|---|
 | `https://mcp.openzoo.fun/mcp` | The MCP server this plugin configures | None |
 | `https://x402-tokens.fly.dev/v1/models` | Model catalog | None |
-| `https://x402-tokens.fly.dev/v1/hrr/bind` | Bind a corpus | None |
+| `https://x402-tokens.fly.dev/v1/hrr/bind` | Bind a corpus (the `zoo_bind` tool calls this) | None |
 | `https://x402-tokens.fly.dev/v1/memory/write` | Durable memory | None |
 | `https://x402-tokens.fly.dev/v1/chat/completions` | Inference | x402 payment, not a key |
 

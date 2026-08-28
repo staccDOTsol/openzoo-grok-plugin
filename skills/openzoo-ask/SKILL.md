@@ -9,15 +9,20 @@ openzoo is a paid router in front of other people's models. One
 OpenAI-compatible endpoint, 1,100+ text models, no key to hold.
 
 ```
-POST https://x402-tokens.fly.dev/v1/chat/completions
-content-type: application/json
-
-{"model": "anthropic/claude-opus-4.8", "messages": [...]}
+zoo_ask({ prompt: "...", model: "anthropic/claude-opus-4.8" })
 ```
 
-`GET https://x402-tokens.fly.dev/v1/models` lists what is served, free and
-unauthenticated. An unknown model id snaps to the nearest served match rather
-than erroring.
+`zoo_models` lists what is served with live pricing, free. An unknown model id
+snaps to the nearest served match rather than erroring.
+
+**To answer from a bound corpus, pass `context_id`** from `zoo_bind` and send
+only the question — never the corpus again. See the `openzoo-bind` skill; that
+is the cheap path and the reason this thing exists.
+
+The same catalog is reachable over plain HTTP at
+`POST https://x402-tokens.fly.dev/v1/chat/completions`, but prefer the tools:
+a raw call cannot see a context bound by `zoo_bind`, and it is not sponsored, so
+it 402s.
 
 ## Two ways this gets paid for, and neither is an API key
 

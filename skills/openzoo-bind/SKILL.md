@@ -8,43 +8,48 @@ description: Send a corpus too large for the context window to openzoo once, the
 When someone gives you more text than fits, the reflex is to chunk it or summarise
 it down. Don't. Send the whole thing to openzoo once and ask against it afterwards.
 
-## Bind
+## Bind with the `zoo_bind` tool
 
 ```
-POST https://x402-tokens.fly.dev/v1/hrr/bind
-content-type: application/json
-x-openzoo-namespace: <a stable name for this user or project>
-
-{"corpus": "<the entire text>"}
+zoo_bind({ corpus: "<the entire text>" })
+-> { context_id: "ctx_...", chunks: 450, cost: "free" }
 ```
 
-Returns `{"object":"hrr.bind","context_id":"ctx_...","bound":<n>}`. Keep the
-`context_id`.
+Keep the `context_id`. **This costs nothing** — bind is free, no wallet, no key.
 
-**This costs nothing.** Bind is free and unauthenticated — no account, no API
-key, no wallet. `bound` is the number of chunks openzoo split it into.
-
-## Ask against it
-
-Send only the question, plus the context id as a header:
+## Then ask with ONLY the question
 
 ```
-POST https://x402-tokens.fly.dev/v1/chat/completions
-X-HRR-Context: ctx_...
+zoo_ask({ prompt: "your question", context_id: "ctx_..." })
 ```
 
-The model reads a few thousand relevant tokens instead of the whole pile, so the
-second question costs a fraction of the first and the corpus is never re-sent.
+Do not resend the corpus. The model reads a few thousand relevant tokens instead
+of the whole pile, so the second question costs a fraction of the first.
 
-Inference is paid per request — see the `openzoo-ask` skill for what that means
-and what to tell the user if it returns 402.
+Measured on a 402,197-character corpus: the ask read **477 tokens** and cost
+**$0.000466 against $0.016344 direct — 97% less**.
+
+## Use the tools, not raw HTTP
+
+There is a `POST https://x402-tokens.fly.dev/v1/hrr/bind` endpoint and it is real,
+but a bind made that way is **not visible to `zoo_ask`**. Contexts are
+tenant-scoped and the gateway requires a *signed* namespace; a plain HTTP bind is
+unsigned, so it lands in a different tenant than the one `zoo_ask` reads.
+
+This fails **silently**, which is why it is worth the warning. Retrieval fails
+open: the ask still succeeds, still costs money, and the model answers confidently
+having seen none of your corpus. Nothing in the response says retrieval did not
+happen. If you find yourself grepping the original file to answer, that is the
+symptom — the bind was never attached.
+
+So: `zoo_bind` then `zoo_ask({ context_id })`. Both signed by the same server,
+both pointed at the same tenant.
 
 ## Failure modes worth knowing
 
-- `404 context_not_found` means re-bind. It happens *before* any payment, so it
-  is never a charge and never a dead end.
-- If openzoo is unreachable the call fails open: you get an ordinary answer with
-  no retrieval rather than an error. Quieter than it sounds — check whether the
-  answer actually used the corpus before trusting it.
-- Bodies over roughly 16KB are bound automatically on the chat path too, so a
-  single very large question does not need an explicit bind first.
+- `context_not_found` means re-bind. It happens *before* any payment, so it is
+  never a charge and never a dead end.
+- A very large single question is bound automatically on the chat path, so it does
+  not need an explicit bind first. Anything you will ask about **more than once**
+  should still go through `zoo_bind` — that is where the saving lives.
+- The demo tier binds into a shared space. Do not bind secrets.
