@@ -1,14 +1,34 @@
 # openzoo — Grok Build plugin
 
-Pay-per-call access to 1,100+ models with **no account and no API key**, plus
-holographic memory: bind a corpus once and stop re-sending it every turn.
+**Your context stops growing.** Every turn of a chat resends the whole
+conversation, so a long session gets expensive for no extra work. Point your
+model at the openzoo proxy and the older turns are spilled into holographic
+memory before the model ever sees them — same model, same answer, a fraction of
+the input.
 
-```
-grok plugin install staccDOTsol/openzoo-grok-plugin
-```
+Measured on a real growing conversation:
 
-Ask it something straight after install. It answers — the demo tier is
-sponsored, so there is nothing to set up first.
+| conversation | sent | tokens the model billed |
+|---|---|---|
+| 4 turns | 22,576 B | 846 |
+| 20 turns | 112,494 B | 5,287 |
+| 60 turns | 336,963 B | **6,421** |
+
+The ratio is not the point — **the curve flattening is**. From 20 to 60 turns the
+transcript tripled and billed context rose **21%**. Turn 60 costs about what turn
+20 costs.
+
+Run `/openzoo:proxy` for the setup. It is four lines of config and no change to
+how you work: no corpus to upload, no command to remember, nothing to think
+about per turn.
+
+> Not available inside the Grok Bot desktop/mobile app — that app runs its agent
+> in a remote pod, so no local proxy can sit in front of its model calls. It
+> needs a client that exposes a `base_url` (grok CLI, Claude Code, Cline, Cursor,
+> aider, any OpenAI-compatible SDK). Everything else below works everywhere.
+
+Also here: pay-per-call access to 1,100+ models with no account and no API key,
+and an explicit bind/ask path for when you *do* hand over a large corpus.
 
 ## What it adds
 
@@ -21,6 +41,7 @@ sponsored, so there is nothing to set up first.
 | `SessionStart` hook | Injects a short brief so binding is the default reflex, not something the model has to remember. Offline, no network, no shell, ~80ms. |
 | `PostToolUse` hook | Binds what the agent just read into holographic memory, in a detached background process. Returns in ~0.1s; never waits for the bind. |
 | `UserPromptSubmit` hook | Retrieves the relevant slice of everything read so far and injects it, so the agent stops re-reading files it has already seen. |
+| `/openzoo:proxy` command | **Point a model at the proxy so the conversation stops growing.** The main event. |
 | `/openzoo:bind` command | Bind a path or the conversation, then **verify `chars`** before reporting success. |
 | `/openzoo:ask` command | Ask against a bind, reporting `context_id` and `tokensRead` as provenance. |
 | `/openzoo:cost` command | Price a call before running it, or total what this session actually spent. |
