@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "openzoo": {
+      "type": "http",
+      "url": "https://mcp.openzoo.fun/mcp"
+    }
+  }
+}
